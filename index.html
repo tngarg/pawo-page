@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAWO Agentic Sandbox | Pharma AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap');
+        
+        :root {
+            --pharma-navy: #002d62;
+            --pharma-teal: #00A3AD;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .terminal-text {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+        }
+
+        .step-inactive { opacity: 0.3; filter: grayscale(1); }
+        .step-active { opacity: 1; filter: none; transform: scale(1.02); transition: all 0.4s ease; }
+
+        @keyframes pulse-teal {
+            0% { box-shadow: 0 0 0 0 rgba(0, 163, 173, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 163, 173, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 163, 173, 0); }
+        }
+        .analyzing { animation: pulse-teal 2s infinite; }
+
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-[#002d62] text-white px-8 py-4 flex justify-between items-center shadow-lg">
+        <div class="flex items-center gap-3">
+            <div class="bg-white p-2 rounded-lg">
+                <i class="fa-solid fa-dna text-[#002d62] text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">PAWO <span class="text-[#00A3AD]">Agentic Sandbox</span></h1>
+                <p class="text-xs opacity-70">Pharma Brand Marketing Optimizer v2.5</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="toggleSettings()" class="hover:bg-white/10 p-2 rounded-full transition-colors">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+            <div id="api-indicator" class="flex items-center gap-2 text-xs bg-red-500/20 px-3 py-1 rounded-full border border-red-500/50">
+                <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                Local Mode
+            </div>
+        </div>
+    </header>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <h2 class="text-2xl font-bold mb-4 text-[#002d62]">Configuration</h2>
+            <p class="text-sm text-slate-600 mb-6">Enter your Gemini API key to enable live Agentic generation. If left blank, the system uses fabricated demonstration data.</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Gemini API Key</label>
+                    <input type="password" id="api-key-input" placeholder="Paste your key here..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#00A3AD] outline-none">
+                </div>
+            </div>
+            <div class="mt-8 flex gap-3">
+                <button onclick="saveSettings()" class="flex-1 bg-[#002d62] text-white py-3 rounded-lg font-bold hover:bg-[#003d82]">Save Config</button>
+                <button onclick="toggleSettings()" class="flex-1 bg-slate-100 py-3 rounded-lg font-bold">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-[1600px] mx-auto p-8 grid grid-cols-12 gap-8">
+        
+        <!-- Sidebar: Inputs -->
+        <div class="col-span-12 lg:col-span-3 space-y-6">
+            <div class="glass-panel rounded-2xl p-6 shadow-sm">
+                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-vials text-[#00A3AD]"></i>
+                    Brand Input
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Select Brand Molecule</label>
+                        <select id="brand-select" class="w-full mt-1 p-3 bg-white border rounded-xl outline-none focus:border-[#00A3AD]">
+                            <option value="respirax">Respirax (Asthma/COPD)</option>
+                            <option value="cardiovast">CardioVast (Hypertension)</option>
+                            <option value="glycoguard">GlycoGuard (Type 2 Diabetes)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Target Physician Segment</label>
+                        <select id="segment-select" class="w-full mt-1 p-3 bg-white border rounded-xl outline-none focus:border-[#00A3AD]">
+                            <option value="specialists">High-Volume Specialists</option>
+                            <option value="gp">General Practitioners</option>
+                            <option value="rural">Rural Health Centers</option>
+                        </select>
+                    </div>
+                    <button id="run-btn" onclick="runAgent()" class="w-full bg-[#00A3AD] text-white py-4 rounded-xl font-bold shadow-lg shadow-teal-500/20 hover:brightness-110 transition-all flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-play"></i>
+                        EXECUTE PAWO LOOP
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-2xl p-6 shadow-sm overflow-hidden">
+                <h3 class="text-xs font-bold mb-3 text-slate-400 uppercase tracking-widest">Agent Reasoning Log</h3>
+                <div id="terminal" class="bg-slate-900 text-teal-400 p-4 rounded-xl h-[350px] terminal-text overflow-y-auto custom-scroll leading-relaxed">
+                    <div class="opacity-50 italic">System ready. Awaiting trigger...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Workspace: The PAWO Loop -->
+        <div class="col-span-12 lg:col-span-9 space-y-8">
+            
+            <!-- PAWO Progress Tracker -->
+            <div class="grid grid-cols-4 gap-4">
+                <div id="step-p" class="glass-panel rounded-xl p-4 flex items-center gap-4 step-inactive">
+                    <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-[#002d62]">P</div>
+                    <div><p class="text-xs font-bold uppercase text-slate-400">Plan</p><p class="text-sm font-bold">Predictive ML</p></div>
+                </div>
+                <div id="step-a" class="glass-panel rounded-xl p-4 flex items-center gap-4 step-inactive">
+                    <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-[#002d62]">A</div>
+                    <div><p class="text-xs font-bold uppercase text-slate-400">Act</p><p class="text-sm font-bold">Strategy Logic</p></div>
+                </div>
+                <div id="step-w" class="glass-panel rounded-xl p-4 flex items-center gap-4 step-inactive">
+                    <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-[#002d62]">W</div>
+                    <div><p class="text-xs font-bold uppercase text-slate-400">Work</p><p class="text-sm font-bold">Gen AI Creative</p></div>
+                </div>
+                <div id="step-o" class="glass-panel rounded-xl p-4 flex items-center gap-4 step-inactive">
+                    <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-[#002d62]">O</div>
+                    <div><p class="text-xs font-bold uppercase text-slate-400">Optimize</p><p class="text-sm font-bold">Feedback Loop</p></div>
+                </div>
+            </div>
+
+            <!-- Dashboard Area -->
+            <div id="dashboard" class="grid grid-cols-12 gap-6 min-h-[600px]">
+                
+                <!-- Placeholder / Initial State -->
+                <div id="empty-state" class="col-span-12 flex flex-col items-center justify-center text-slate-400 py-20">
+                    <i class="fa-solid fa-robot text-6xl mb-4 opacity-20"></i>
+                    <p class="text-lg">Initialize the Agent to visualize the Brand Strategy</p>
+                </div>
+
+                <!-- Step P: ML Brain Visualization (Hidden Initially) -->
+                <div id="viz-p" class="col-span-12 hidden">
+                    <div class="glass-panel rounded-2xl p-8 h-full border-t-4 border-[#00A3AD]">
+                        <h3 class="text-xl font-bold mb-6 text-[#002d62]">ML Brain: 12-Month Potential Analysis</h3>
+                        <div class="grid grid-cols-12 gap-2 items-end h-[300px] mb-8">
+                            <!-- Bars will be injected here -->
+                        </div>
+                        <div class="grid grid-cols-3 gap-6">
+                            <div class="p-4 bg-teal-50 rounded-xl border border-teal-100">
+                                <p class="text-xs font-bold text-teal-600 uppercase mb-1">Peak Potential</p>
+                                <p class="text-2xl font-bold text-[#002d62]" id="peak-month">-</p>
+                            </div>
+                            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                <p class="text-xs font-bold text-slate-500 uppercase mb-1">Historical Correlation</p>
+                                <p class="text-2xl font-bold text-[#002d62]">0.94 High</p>
+                            </div>
+                            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                <p class="text-xs font-bold text-slate-500 uppercase mb-1">Recommended Budget</p>
+                                <p class="text-2xl font-bold text-[#002d62]">$1.2M Optimized</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step W: Generative Content (Hidden Initially) -->
+                <div id="viz-w" class="col-span-12 hidden space-y-6">
+                    <div class="grid grid-cols-12 gap-6">
+                        <!-- Email Card -->
+                        <div class="col-span-12 lg:col-span-7 glass-panel rounded-2xl p-6 border-t-4 border-[#002d62]">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold flex items-center gap-2"><i class="fa-solid fa-envelope text-blue-500"></i> Generated HCP Email</h3>
+                                <span class="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded uppercase">Gen AI Draft</span>
+                            </div>
+                            <div class="bg-white border rounded-xl p-6 text-sm space-y-3 min-h-[300px]" id="email-preview">
+                                <div class="animate-pulse space-y-2">
+                                    <div class="h-4 bg-slate-100 rounded w-3/4"></div>
+                                    <div class="h-4 bg-slate-100 rounded"></div>
+                                    <div class="h-4 bg-slate-100 rounded"></div>
+                                    <div class="h-32 bg-slate-50 rounded"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Ad Banner Card -->
+                        <div class="col-span-12 lg:col-span-5 glass-panel rounded-2xl p-6 border-t-4 border-[#002d62]">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold flex items-center gap-2"><i class="fa-solid fa-image text-purple-500"></i> Suggested Banner</h3>
+                                <span class="text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-1 rounded uppercase">Asset Gen</span>
+                            </div>
+                            <div id="banner-preview" class="aspect-square bg-slate-100 rounded-xl flex items-center justify-center p-8 text-center border-2 border-dashed border-slate-200">
+                                <p class="text-slate-400 text-sm italic">Analyzing brand colors and key messaging...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let apiKey = "";
+        let isRunning = false;
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        
+        const brandData = {
+            respirax: { name: "Respirax", peak: "October", focus: "Winter Preparedness", engagement: [45, 52, 60, 48, 40, 35, 30, 42, 75, 95, 88, 80] },
+            cardiovast: { name: "CardioVast", peak: "January", focus: "New Year Screenings", engagement: [98, 85, 70, 65, 60, 55, 50, 48, 55, 62, 70, 80] },
+            glycoguard: { name: "GlycoGuard", peak: "May", focus: "Post-Holiday Maintenance", engagement: [60, 65, 75, 88, 98, 85, 75, 70, 68, 72, 80, 75] }
+        };
+
+        function toggleSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        function saveSettings() {
+            apiKey = document.getElementById('api-key-input').value.trim();
+            const indicator = document.getElementById('api-indicator');
+            if (apiKey) {
+                indicator.innerHTML = `<div class="w-2 h-2 rounded-full bg-green-500"></div>Gemini Mode`;
+                indicator.className = "flex items-center gap-2 text-xs bg-green-500/20 px-3 py-1 rounded-full border border-green-500/50";
+            } else {
+                indicator.innerHTML = `<div class="w-2 h-2 rounded-full bg-red-500"></div>Local Mode`;
+                indicator.className = "flex items-center gap-2 text-xs bg-red-500/20 px-3 py-1 rounded-full border border-red-500/50";
+            }
+            toggleSettings();
+        }
+
+        async function log(msg, color = "teal-400") {
+            const terminal = document.getElementById('terminal');
+            const entry = document.createElement('div');
+            entry.className = `mb-1 text-${color}`;
+            entry.innerHTML = `<span class="opacity-50">></span> ${msg}`;
+            terminal.appendChild(entry);
+            terminal.scrollTop = terminal.scrollHeight;
+            await new Promise(r => setTimeout(r, 800));
+        }
+
+        function setStep(step) {
+            ['p', 'a', 'w', 'o'].forEach(s => {
+                document.getElementById(`step-${s}`).className = `glass-panel rounded-xl p-4 flex items-center gap-4 ${s === step ? 'step-active ring-2 ring-[#00A3AD]' : 'step-inactive'}`;
+            });
+        }
+
+        async function runAgent() {
+            if (isRunning) return;
+            isRunning = true;
+            
+            const brandKey = document.getElementById('brand-select').value;
+            const segment = document.getElementById('segment-select').value;
+            const data = brandData[brandKey];
+
+            // Reset UI
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('viz-p').classList.add('hidden');
+            document.getElementById('viz-w').classList.add('hidden');
+            document.getElementById('terminal').innerHTML = "";
+
+            // START PAWO
+            
+            // P - PLAN
+            setStep('p');
+            await log("Initializing ML Brain Pipeline...");
+            await log(`Accessing historical Rx data for ${data.name}...`);
+            await log("Correlating seasonal trends with physician engagement...");
+            
+            // Show Graph
+            document.getElementById('viz-p').classList.remove('hidden');
+            const graphContainer = document.querySelector('#viz-p .grid.grid-cols-12');
+            graphContainer.innerHTML = "";
+            data.engagement.forEach((val, i) => {
+                const bar = document.createElement('div');
+                bar.className = "flex flex-col items-center gap-2 group relative";
+                bar.innerHTML = `
+                    <div class="w-full bg-[#00A3AD]/20 rounded-t-lg transition-all duration-1000" style="height: 0%">
+                        <div class="w-full bg-[#00A3AD] rounded-t-lg flex items-end justify-center pb-1 text-[10px] text-white font-bold transition-all duration-1000" style="height: 0%">${val}%</div>
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-400">${months[i]}</span>
+                `;
+                graphContainer.appendChild(bar);
+                setTimeout(() => {
+                    bar.children[0].style.height = '100%';
+                    bar.children[0].children[0].style.height = `${val}%`;
+                }, i * 50);
+            });
+            document.getElementById('peak-month').innerText = data.peak;
+            await log(`Peak identified: ${data.peak}. Goal set: Optimized Outreach.`, "white");
+
+            // A - ACT
+            setStep('a');
+            await log("Agent transitioning to Strategy Reasoning...");
+            await log(`Targeting Segment: ${segment}...`);
+            await log("Selecting highest probability content themes based on 'Most Suggested' logic...");
+            await log("Decision: Omnichannel Cadence (Email -> Ad -> Follow-up)", "white");
+
+            // W - WORK
+            setStep('w');
+            document.getElementById('viz-w').classList.remove('hidden');
+            await log("Initializing Generative Engine...");
+            await log("Drafting context-aware HCP communication...");
+
+            if (apiKey) {
+                await generateWithGemini(data, segment);
+            } else {
+                await generateMockContent(data);
+            }
+            
+            await log("Content generation complete. Staging for approval.", "white");
+
+            // O - OPTIMIZE
+            setStep('o');
+            await log("Setting up performance trackers...");
+            await log("Feedback loop initialized. Ready for deployment.");
+            
+            isRunning = false;
+        }
+
+        async function generateMockContent(data) {
+            const emailBox = document.getElementById('email-preview');
+            const bannerBox = document.getElementById('banner-preview');
+
+            emailBox.innerHTML = `
+                <div class="border-b pb-2 mb-4 text-xs">
+                    <strong>Subject:</strong> Strategic Clinical Update: ${data.name} for ${data.focus}
+                </div>
+                <p>Dear Doctor,</p>
+                <p>As we approach the <strong>${data.peak}</strong> peak in patient presentations, we wanted to share the latest clinical efficacy data for ${data.name}.</p>
+                <p>In recent studies, patients transitioning to ${data.name} showed a 22% improvement in baseline outcomes within the first 4 weeks.</p>
+                <div class="bg-slate-50 p-4 border rounded italic">
+                    "This brand continues to be the most suggested content for specialists focusing on ${data.focus}."
+                </div>
+                <p>Best regards,<br>Medical Affairs Team</p>
+            `;
+
+            bannerBox.innerHTML = `
+                <div class="flex flex-col gap-4">
+                    <div class="text-xs font-bold text-[#002d62] uppercase tracking-widest">${data.name}</div>
+                    <div class="text-2xl font-bold leading-tight">Mastering ${data.focus}</div>
+                    <div class="bg-[#00A3AD] text-white px-4 py-2 rounded-full text-xs font-bold self-center">Clinical Insights →</div>
+                </div>
+            `;
+            bannerBox.className = "aspect-square bg-teal-50 rounded-xl flex items-center justify-center p-8 text-center border-2 border-[#00A3AD]";
+        }
+
+        async function generateWithGemini(brandInfo, segment) {
+            const emailBox = document.getElementById('email-preview');
+            const bannerBox = document.getElementById('banner-preview');
+            
+            const prompt = `Act as a Pharmaceutical Brand Marketing Expert. Create a personalized marketing email for the brand "${brandInfo.name}" focusing on "${brandInfo.focus}". The target audience is "${segment}". Ensure the tone is clinical and professional. Mention the peak month of "${brandInfo.peak}". Also provide a short 5-word headline for a banner. Return as JSON: {email: "...", banner: "..."}`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+                
+                const result = await response.json();
+                const content = JSON.parse(result.candidates[0].content.parts[0].text);
+                
+                emailBox.innerHTML = content.email.replace(/\n/g, '<br>');
+                bannerBox.innerHTML = `
+                    <div class="flex flex-col gap-4">
+                        <div class="text-xs font-bold text-[#002d62] uppercase tracking-widest">${brandInfo.name}</div>
+                        <div class="text-2xl font-bold leading-tight">${content.banner}</div>
+                        <div class="bg-[#00A3AD] text-white px-4 py-2 rounded-full text-xs font-bold self-center">View Data →</div>
+                    </div>
+                `;
+                bannerBox.className = "aspect-square bg-teal-50 rounded-xl flex items-center justify-center p-8 text-center border-2 border-[#00A3AD]";
+
+            } catch (err) {
+                await log("Gemini API Error. Falling back to Local Mode.", "red-400");
+                await generateMockContent(brandInfo);
+            }
+        }
+    </script>
+</body>
+</html>
