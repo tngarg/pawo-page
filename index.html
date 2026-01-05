@@ -273,7 +273,7 @@ container.querySelectorAll('.bar-col').forEach(el => el.remove());
                 // Trigger animation
                 setTimeout(() => {
                     barWrapper.querySelector('.bar-grow').style.height = `${val}%`;
-                }, i * 250);
+                }, i * 40);
             });
             document.getElementById('peak-indicator').innerText = `PEAK: ${data.peak.toUpperCase()}`;
             await log(`Potential Peak: ${data.peak}. Targeting focus: ${data.focus}.`, "white");
