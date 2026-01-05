@@ -183,10 +183,17 @@
             </div>
         </div>
     </div>
+	
+	<script>
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+</script>
 
     <script>
-        let apiKey = "";
-        let isRunning = false;
+const DEFAULT_GEMINI_KEY = "AIzaSyAyN-pge120c99FSZrRSv7L7LuDCiz9gPU"; // <-- optional
+
+// 2) Initialize apiKey from the default
+let apiKey = (DEFAULT_GEMINI_KEY || "").trim();
+let isRunning = false;
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const brandData = {
             respirax: { name: "Respirax", peak: "October", focus: "Winter Prep", values: [35, 42, 50, 48, 40, 32, 25, 40, 78, 98, 85, 75] },
@@ -194,17 +201,25 @@
             glycoguard: { name: "GlycoGuard", peak: "May", focus: "Adherence", values: [55, 60, 75, 85, 96, 82, 72, 68, 65, 70, 78, 72] }
         };
 
+function updateApiIndicator() {
+  const indicator = document.getElementById('api-indicator');
+  if (apiKey) {
+    indicator.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>Active`;
+    indicator.className = "flex items-center gap-1.5 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/30 text-green-500";
+  } else {
+    indicator.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>Local Mode`;
+    indicator.className = "flex items-center gap-1.5 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/30 text-red-400";
+  }
+}
+
         function toggleSettings() { document.getElementById('settings-modal').classList.toggle('hidden'); }
         
         function saveSettings() {
-            apiKey = document.getElementById('api-key-input').value.trim();
-            const indicator = document.getElementById('api-indicator');
-            if (apiKey) {
-                indicator.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>Gemini Active`;
-                indicator.className = "flex items-center gap-1.5 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/30 text-green-500";
-            }
-            toggleSettings();
-        }
+  apiKey = document.getElementById('api-key-input').value.trim();
+  updateApiIndicator();
+  toggleSettings();
+}
+
 
         async function log(msg, color = "teal-400") {
             const terminal = document.getElementById('terminal');
@@ -239,11 +254,14 @@
             // P - PLAN (The Corrected Graph Logic)
             setStep('p');
             await log("Accessing ML Prediction Models...");
+			await sleep(800);
             const container = document.getElementById('graph-container');
-            container.innerHTML = "";
+           
+container.querySelectorAll('.bar-col').forEach(el => el.remove());
+
             data.values.forEach((val, i) => {
                 const barWrapper = document.createElement('div');
-                barWrapper.className = "flex-1 flex flex-col justify-end items-center h-full group";
+                barWrapper.className = "bar-col flex-1 flex flex-col justify-end items-center h-full group";
                 // Inner Bar logic: Corrected to show relative height
                 barWrapper.innerHTML = `
                     <div class="w-full bg-slate-50 rounded-t border-x border-t border-slate-100 flex items-end h-full">
@@ -255,7 +273,7 @@
                 // Trigger animation
                 setTimeout(() => {
                     barWrapper.querySelector('.bar-grow').style.height = `${val}%`;
-                }, i * 40);
+                }, i * 250);
             });
             document.getElementById('peak-indicator').innerText = `PEAK: ${data.peak.toUpperCase()}`;
             await log(`Potential Peak: ${data.peak}. Targeting focus: ${data.focus}.`, "white");
@@ -263,11 +281,13 @@
             // A - ACT
             setStep('a');
             await log("Reasoning over physician segment behavior...");
+			await sleep(800);
             await log("Selected Channel: Omnichannel Email & Display Banners.");
 
             // W - WORK
             setStep('w');
             await log("Generative Engine engaged...");
+			await sleep(800);
             if (apiKey) {
                 await fetchGemini(data);
             } else {
@@ -277,9 +297,13 @@
             // O - OPTIMIZE
             setStep('o');
             await log("Deployment complete. Monitoring KPIs...", "white");
+			await sleep(800);
             isRunning = false;
         }
 
+window.addEventListener("DOMContentLoaded", () => {
+  updateApiIndicator();
+});
         async function showMock(data) {
             document.getElementById('email-view').innerHTML = `
                 <div class="font-bold border-b pb-1 mb-2 text-blue-900">Subject: ${data.name} Clinical Update: Preparedness for ${data.peak}</div>
