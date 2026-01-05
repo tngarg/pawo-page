@@ -343,7 +343,7 @@ window.addEventListener("DOMContentLoaded", () => {
                 document.getElementById('email-view').innerHTML = json.email.replace(/\n/g, '<br>');
                 document.getElementById('banner-view').innerHTML = `<div class="text-center"><div class="text-lg font-bold text-[#002d62]">${json.headline}</div><div class="text-xs text-[#00A3AD] mt-2">${data.name}</div></div>`;
             } catch (e) {
-                await log("Gemini Error - Using Mock Data", "red-400");
+                // await log("Gemini Error - Using Mock Data", "red-400");
                 showMock(data);
             }
         }
