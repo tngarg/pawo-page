@@ -264,11 +264,19 @@ container.querySelectorAll('.bar-col').forEach(el => el.remove());
                 barWrapper.className = "bar-col flex-1 flex flex-col justify-end items-center h-full group";
                 // Inner Bar logic: Corrected to show relative height
                 barWrapper.innerHTML = `
-                    <div class="w-full bg-slate-50 rounded-t border-x border-t border-slate-100 flex items-end h-full">
-                        <div class="bar-grow w-full bg-[#00A3AD] rounded-t" style="height: 0%"></div>
-                    </div>
-                    <span class="text-[8px] mt-1 text-slate-400 font-bold">${months[i]}</span>
-                `;
+						  <div class="w-full bg-slate-50 rounded-t border-x border-t border-slate-100 flex items-end h-full relative">
+							
+							<!-- % label -->
+							<div class="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition">
+							  ${val}%
+							</div>
+
+							<!-- bar -->
+							<div class="bar-grow w-full bg-[#00A3AD] rounded-t" style="height: 0%"></div>
+						  </div>
+
+						  <span class="text-[8px] mt-1 text-slate-400 font-bold">${months[i]}</span>
+						`;
                 container.appendChild(barWrapper);
                 // Trigger animation
                 setTimeout(() => {
